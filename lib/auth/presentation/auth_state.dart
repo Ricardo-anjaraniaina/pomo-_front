@@ -7,6 +7,7 @@ class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
   final SessionRepository _sessionRepository;
   bool _isLoading = false;
+  bool _isInitializing = true;
   String? _errorMessage;
 
   AuthProvider(this._authRepository, this._sessionRepository) {
@@ -14,15 +15,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   bool get isLoading => _isLoading;
+  bool get isInitializing => _isInitializing;
   String? get errorMessage => _errorMessage;
   UserModel? get currentUser => _authRepository.currentUser;
   bool get isAuthenticated => currentUser != null;
 
   Future<void> _restoreSession() async {
-    await _authRepository.restoreSession();
-    notifyListeners();
-    if (isAuthenticated) {
-      await _sessionRepository.syncOfflineSessions();
+    try {
+      await _authRepository.restoreSession();
+      if (isAuthenticated) {
+        await _sessionRepository.syncOfflineSessions();
+      }
+    } finally {
+      _isInitializing = false;
+      notifyListeners();
     }
   }
 

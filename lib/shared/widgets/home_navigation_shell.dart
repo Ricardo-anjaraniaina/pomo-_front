@@ -6,6 +6,7 @@ import '../../stats/presentation/stats_screen.dart';
 import '../../tasks/presentation/tasks_screen.dart';
 import '../../timer/domain/timer_state.dart';
 import '../../timer/presentation/timer_screen.dart';
+import '../../auth/presentation/auth_state.dart';
 
 class HomeNavigationShell extends StatefulWidget {
   const HomeNavigationShell({super.key});
@@ -19,6 +20,11 @@ class _HomeNavigationShellState extends State<HomeNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    if (authProvider.isInitializing) {
+      return const _AppInitializationLoadingScreen();
+    }
+
     final timerProvider = context.watch<TimerProvider>();
     final activeColor = timerProvider.modeColor;
 
@@ -69,6 +75,112 @@ class _HomeNavigationShellState extends State<HomeNavigationShell> {
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person),
               label: 'Profile',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppInitializationLoadingScreen extends StatelessWidget {
+  const _AppInitializationLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _PomoLogoIndicator(),
+                SizedBox(width: 12),
+                Text(
+                  'Pomo.',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.5,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 32),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.focusAccent),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Initialisation...',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PomoLogoIndicator extends StatefulWidget {
+  const _PomoLogoIndicator();
+
+  @override
+  State<_PomoLogoIndicator> createState() => _PomoLogoIndicatorState();
+}
+
+class _PomoLogoIndicatorState extends State<_PomoLogoIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _animation,
+      child: Container(
+        width: 16,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.focusAccent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.focusAccent.withValues(alpha: 0.6),
+              blurRadius: 12,
+              spreadRadius: 2,
             ),
           ],
         ),
