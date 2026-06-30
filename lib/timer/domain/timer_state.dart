@@ -2,11 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../data/session_repository.dart';
 import '../../tasks/presentation/tasks_state.dart';
+import '../../core/notification_service.dart';
+import '../../core/settings_service.dart';
 
 enum PomodoroMode { focus, shortBreak, longBreak }
 
 class TimerProvider extends ChangeNotifier {
   final SessionRepository _sessionRepository;
+  final NotificationService _notificationService;
+  final SettingsService _settingsService;
   TasksProvider? _tasksProvider;
 
   PomodoroMode _mode = PomodoroMode.focus;
@@ -18,13 +22,29 @@ class TimerProvider extends ChangeNotifier {
 
   TimerProvider({
     required SessionRepository sessionRepository,
+    required NotificationService notificationService,
+    required SettingsService settingsService,
     TasksProvider? tasksProvider,
   })  : _sessionRepository = sessionRepository,
-        _tasksProvider = tasksProvider;
+        _notificationService = notificationService,
+        _settingsService = settingsService,
+        _tasksProvider = tasksProvider {
+    // Apply loaded settings immediately
+    _setDurationForMode(_mode);
+  }
 
   // Update tasks provider reference when updated in MultiProvider
   void updateTasksProvider(TasksProvider tasksProvider) {
     _tasksProvider = tasksProvider;
+  }
+
+  /// Called when SettingsService values change so the timer adapts live
+  /// (only when not currently running to avoid mid-session glitches).
+  void onSettingsChanged() {
+    if (!_isRunning) {
+      _setDurationForMode(_mode);
+      notifyListeners();
+    }
   }
 
   PomodoroMode get mode => _mode;
@@ -104,6 +124,7 @@ class TimerProvider extends ChangeNotifier {
 
   Future<void> _handleSessionComplete({required bool skipped}) async {
     final activeTask = _tasksProvider?.selectedTask;
+    final completedModeName = modeName;
 
     if (!skipped) {
       // 1. Log the completed session to repository
@@ -145,18 +166,29 @@ class TimerProvider extends ChangeNotifier {
 
     _setDurationForMode(_mode);
     notifyListeners();
+
+    // 4. Send native notification if not skipped and notifications enabled
+    if (!skipped && _settingsService.notificationsEnabled) {
+      await _notificationService.showTimerCompleteNotification(
+        modeName: completedModeName,
+        nextMode: modeName,
+      );
+    }
   }
 
   void _setDurationForMode(PomodoroMode mode) {
     switch (mode) {
       case PomodoroMode.focus:
-        _durationRemaining = const Duration(minutes: 25);
+        _durationRemaining =
+            Duration(minutes: _settingsService.focusDuration);
         break;
       case PomodoroMode.shortBreak:
-        _durationRemaining = const Duration(minutes: 5);
+        _durationRemaining =
+            Duration(minutes: _settingsService.shortBreakDuration);
         break;
       case PomodoroMode.longBreak:
-        _durationRemaining = const Duration(minutes: 15);
+        _durationRemaining =
+            Duration(minutes: _settingsService.longBreakDuration);
         break;
     }
     _totalDuration = _durationRemaining;

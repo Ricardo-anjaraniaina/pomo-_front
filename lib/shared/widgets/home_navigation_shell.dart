@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../auth/presentation/profile_screen.dart';
 import '../../core/constants.dart';
 import '../../stats/presentation/stats_screen.dart';
 import '../../tasks/presentation/tasks_screen.dart';
@@ -20,6 +21,7 @@ class _HomeNavigationShellState extends State<HomeNavigationShell> {
     TimerScreen(),
     TasksScreen(),
     StatsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -28,15 +30,10 @@ class _HomeNavigationShellState extends State<HomeNavigationShell> {
     final activeColor = timerProvider.modeColor;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(
-            top: BorderSide(color: AppColors.border, width: 1.0),
-          ),
+          border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -67,6 +64,11 @@ class _HomeNavigationShellState extends State<HomeNavigationShell> {
               icon: Icon(Icons.bar_chart_outlined),
               activeIcon: Icon(Icons.bar_chart_rounded),
               label: 'Stats',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),

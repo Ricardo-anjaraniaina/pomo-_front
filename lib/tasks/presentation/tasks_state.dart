@@ -34,13 +34,24 @@ class TasksProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addTask(String title, String description, int estimatedPomodoros) async {
+  Future<void> addTask(
+    String title,
+    String description,
+    int estimatedPomodoros,
+  ) async {
+    _errorMessage = null;
+    notifyListeners();
+
     try {
-      final newTask = await _taskRepository.addTask(title, description, estimatedPomodoros);
+      final newTask = await _taskRepository.addTask(
+        title,
+        description,
+        estimatedPomodoros,
+      );
       _tasks.add(newTask);
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
     }
   }
@@ -50,7 +61,7 @@ class TasksProvider extends ChangeNotifier {
     if (index != -1) {
       final task = _tasks[index];
       final updatedTask = task.copyWith(isCompleted: !task.isCompleted);
-      
+
       // Update local state first for fast response
       _tasks[index] = updatedTask;
       if (_selectedTask?.id == id) {
@@ -76,8 +87,10 @@ class TasksProvider extends ChangeNotifier {
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
-      final updatedTask = task.copyWith(completedPomodoros: task.completedPomodoros + 1);
-      
+      final updatedTask = task.copyWith(
+        completedPomodoros: task.completedPomodoros + 1,
+      );
+
       _tasks[index] = updatedTask;
       if (_selectedTask?.id == id) {
         _selectedTask = updatedTask;

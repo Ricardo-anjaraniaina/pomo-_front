@@ -72,16 +72,18 @@ class TasksScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Estimated Blocks:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                      const Expanded(
+                        child: Text(
+                          'Estimated Blocks:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                       Text(
-                        '🍅 × $estimatedPomodoros',
+                        '🍏 × $estimatedPomodoros',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -95,7 +97,9 @@ class TasksScreen extends StatelessWidget {
                       activeTrackColor: AppColors.focusAccent,
                       inactiveTrackColor: AppColors.border,
                       thumbColor: AppColors.focusAccent,
-                      overlayColor: AppColors.focusAccent.withValues(alpha: 0.2),
+                      overlayColor: AppColors.focusAccent.withValues(
+                        alpha: 0.2,
+                      ),
                       valueIndicatorColor: AppColors.surface,
                     ),
                     child: Slider(
@@ -116,14 +120,25 @@ class TasksScreen extends StatelessWidget {
                   // Submit
                   PrimaryButton(
                     label: 'Create Task',
-                    onPressed: () {
-                      if (titleController.text.trim().isNotEmpty) {
-                        tasksProvider.addTask(
-                          titleController.text.trim(),
-                          descController.text.trim(),
-                          estimatedPomodoros,
+                    onPressed: () async {
+                      final title = titleController.text.trim();
+                      if (title.isEmpty) return;
+
+                      final navigator = Navigator.of(sheetContext);
+                      final messenger = ScaffoldMessenger.of(sheetContext);
+
+                      await tasksProvider.addTask(
+                        title,
+                        descController.text.trim(),
+                        estimatedPomodoros,
+                      );
+
+                      if (tasksProvider.errorMessage == null) {
+                        navigator.pop();
+                      } else {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(tasksProvider.errorMessage!)),
                         );
-                        Navigator.pop(sheetContext);
                       }
                     },
                   ),
@@ -161,75 +176,77 @@ class TasksScreen extends StatelessWidget {
       body: tasksProvider.isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.focusAccent),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.focusAccent,
+                ),
               ),
             )
           : tasksProvider.tasks.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.assignment_turned_in_outlined,
-                        size: 64,
-                        color: AppColors.textSecondary.withValues(alpha: 0.4),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No tasks created yet',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Create a task and select it to start tracking time.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary.withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      TextButton.icon(
-                        onPressed: () => _showAddTaskSheet(context),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add First Task'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.focusAccent,
-                        ),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.assignment_turned_in_outlined,
+                    size: 64,
+                    color: AppColors.textSecondary.withValues(alpha: 0.4),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  itemCount: tasksProvider.tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasksProvider.tasks[index];
-                    final isSelected = activeTask?.id == task.id;
-                    return TaskCard(
-                      task: task,
-                      isSelected: isSelected,
-                      onTap: () {
-                        // Toggle select
-                        if (isSelected) {
-                          tasksProvider.selectTask(null);
-                        } else {
-                          tasksProvider.selectTask(task);
-                        }
-                      },
-                      onToggleComplete: () {
-                        tasksProvider.toggleTaskCompletion(task.id);
-                      },
-                      onDelete: () {
-                        tasksProvider.deleteTask(task.id);
-                      },
-                    );
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No tasks created yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create a task and select it to start tracking time.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    onPressed: () => _showAddTaskSheet(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add First Task'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.focusAccent,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              itemCount: tasksProvider.tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasksProvider.tasks[index];
+                final isSelected = activeTask?.id == task.id;
+                return TaskCard(
+                  task: task,
+                  isSelected: isSelected,
+                  onTap: () {
+                    // Toggle select
+                    if (isSelected) {
+                      tasksProvider.selectTask(null);
+                    } else {
+                      tasksProvider.selectTask(task);
+                    }
                   },
-                ),
+                  onToggleComplete: () {
+                    tasksProvider.toggleTaskCompletion(task.id);
+                  },
+                  onDelete: () {
+                    tasksProvider.deleteTask(task.id);
+                  },
+                );
+              },
+            ),
     );
   }
 }

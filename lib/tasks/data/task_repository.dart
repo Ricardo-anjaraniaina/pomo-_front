@@ -7,10 +7,10 @@ import '../domain/task_model.dart';
 
 class TaskRepository {
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (AuthRepository.token != null)
-          'Authorization': 'Bearer ${AuthRepository.token}',
-      };
+    'Content-Type': 'application/json',
+    if (AuthRepository.token != null)
+      'Authorization': 'Bearer ${AuthRepository.token}',
+  };
 
   Future<List<TaskModel>> getTasks() async {
     final url = Uri.parse('${AppConfig.baseUrl}/tasks');
@@ -24,7 +24,7 @@ class TaskRepository {
     return jsonList.map((json) {
       final done = json['done'] as bool? ?? false;
       final estimated = json['estimated'] as int? ?? 1;
-      
+
       return TaskModel(
         id: json['id'] as String,
         title: json['title'] as String,
@@ -37,13 +37,18 @@ class TaskRepository {
     }).toList();
   }
 
-  Future<TaskModel> addTask(String title, String description, int estimatedPomodoros) async {
+  Future<TaskModel> addTask(
+    String title,
+    String description,
+    int estimatedPomodoros,
+  ) async {
     final url = Uri.parse('${AppConfig.baseUrl}/tasks');
     final response = await http.post(
       url,
       headers: _headers,
       body: jsonEncode({
         'title': title,
+        'description': description,
         'estimated': estimatedPomodoros,
       }),
     );
