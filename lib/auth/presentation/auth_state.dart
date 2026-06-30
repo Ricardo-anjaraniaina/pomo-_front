@@ -9,12 +9,19 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  AuthProvider(this._authRepository, this._sessionRepository);
+  AuthProvider(this._authRepository, this._sessionRepository) {
+    _restoreSession();
+  }
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   UserModel? get currentUser => _authRepository.currentUser;
   bool get isAuthenticated => currentUser != null;
+
+  Future<void> _restoreSession() async {
+    await _authRepository.restoreSession();
+    notifyListeners();
+  }
 
   Future<bool> login(String email, String password) async {
     _isLoading = true;
