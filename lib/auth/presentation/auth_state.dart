@@ -21,6 +21,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _restoreSession() async {
     await _authRepository.restoreSession();
     notifyListeners();
+    if (isAuthenticated) {
+      await _sessionRepository.syncOfflineSessions();
+    }
   }
 
   Future<bool> login(String email, String password) async {

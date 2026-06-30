@@ -19,6 +19,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _avatarController;
   late Animation<double> _avatarScale;
+  int? _unsyncedCount;
+  bool _isSyncing = false;
 
   @override
   void initState() {
@@ -32,6 +34,17 @@ class _ProfileScreenState extends State<ProfileScreen>
       curve: Curves.elasticOut,
     );
     _avatarController.forward();
+    _loadUnsyncedCount();
+  }
+
+  Future<void> _loadUnsyncedCount() async {
+    if (!mounted) return;
+    final count = await context.read<SessionRepository>().getUnsyncedCount();
+    if (mounted) {
+      setState(() {
+        _unsyncedCount = count;
+      });
+    }
   }
 
   @override
@@ -95,6 +108,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         _buildSectionHeader('🔔 Notifications'),
         const SizedBox(height: 8),
         _buildNotificationSettings(context, settings),
+
+        const SizedBox(height: 16),
+
+        // ── Synchronization ──
+        _buildSectionHeader('🔄 Synchronisation'),
+        const SizedBox(height: 8),
+        _buildSyncCard(context),
 
         const SizedBox(height: 24),
 
@@ -536,6 +556,139 @@ class _ProfileScreenState extends State<ProfileScreen>
             activeThumbColor: color,
             activeTrackColor: color.withValues(alpha: 0.3),
             inactiveTrackColor: AppColors.border,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncCard(BuildContext context) {
+    final sessionRepo = context.read<SessionRepository>();
+    final hasUnsynced = _unsyncedCount != null && _unsyncedCount! > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border, width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (hasUnsynced ? AppColors.focusAccent : AppColors.breakAccent)
+                      .withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  hasUnsynced ? Icons.sync_problem_rounded : Icons.sync_rounded,
+                  color: hasUnsynced ? AppColors.focusAccent : AppColors.breakAccent,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasUnsynced
+                          ? 'Sessions non synchronisées'
+                          : 'Données à jour',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _unsyncedCount == null
+                          ? 'Calcul du statut...'
+                          : hasUnsynced
+                              ? '$_unsyncedCount session(s) en attente de synchronisation.'
+                              : 'Toutes vos sessions sont bien enregistrées sur le serveur.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _isSyncing
+                  ? null
+                  : () async {
+                      setState(() {
+                        _isSyncing = true;
+                      });
+
+                      final success = await sessionRepo.syncOfflineSessions();
+
+                      if (mounted) {
+                        setState(() {
+                          _isSyncing = false;
+                        });
+                        await _loadUnsyncedCount();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? '🔄 Synchronisation réussie !'
+                                : '❌ Échec de la synchronisation. Vérifiez votre connexion.'),
+                            duration: const Duration(seconds: 3),
+                            backgroundColor: success
+                                ? const Color(0xFF10B981)
+                                : AppColors.focusAccent,
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: hasUnsynced
+                    ? AppColors.focusAccent
+                    : AppColors.surfaceHover,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: hasUnsynced ? Colors.transparent : AppColors.border,
+                    width: 1,
+                  ),
+                ),
+              ),
+              icon: _isSyncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.sync_rounded, size: 18),
+              label: Text(
+                _isSyncing
+                    ? 'Synchronisation...'
+                    : hasUnsynced
+                        ? 'Synchroniser maintenant'
+                        : 'Forcer la synchronisation',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ],
       ),
