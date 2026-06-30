@@ -5,6 +5,7 @@ class TaskModel {
   final bool isCompleted;
   final int estimatedPomodoros;
   final int completedPomodoros;
+  final bool isLocal; // true = offline-only, not synced to server
 
   TaskModel({
     required this.id,
@@ -13,6 +14,7 @@ class TaskModel {
     this.isCompleted = false,
     required this.estimatedPomodoros,
     this.completedPomodoros = 0,
+    this.isLocal = false,
   });
 
   TaskModel copyWith({
@@ -22,6 +24,7 @@ class TaskModel {
     bool? isCompleted,
     int? estimatedPomodoros,
     int? completedPomodoros,
+    bool? isLocal,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -30,6 +33,7 @@ class TaskModel {
       isCompleted: isCompleted ?? this.isCompleted,
       estimatedPomodoros: estimatedPomodoros ?? this.estimatedPomodoros,
       completedPomodoros: completedPomodoros ?? this.completedPomodoros,
+      isLocal: isLocal ?? this.isLocal,
     );
   }
 

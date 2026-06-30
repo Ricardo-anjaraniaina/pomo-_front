@@ -17,6 +17,7 @@ class TasksProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   TaskModel? get selectedTask => _selectedTask;
+  bool get isOffline => !_isAuthenticated;
 
   void updateAuth(bool isAuthenticated) {
     if (_isAuthenticated != isAuthenticated) {
@@ -30,7 +31,8 @@ class TasksProvider extends ChangeNotifier {
   }
 
   void clearTasks() {
-    _tasks = [];
+    // Keep local offline tasks when disconnecting so the user doesn't lose them
+    _tasks = _tasks.where((task) => task.isLocal).toList();
     _selectedTask = null;
     _errorMessage = null;
     notifyListeners();
@@ -63,6 +65,20 @@ class TasksProvider extends ChangeNotifier {
   ) async {
     _errorMessage = null;
     notifyListeners();
+
+    // Offline mode: create a local task without any API call
+    if (!_isAuthenticated) {
+      final localTask = TaskModel(
+        id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        title: title,
+        description: description,
+        estimatedPomodoros: estimatedPomodoros,
+        isLocal: true,
+      );
+      _tasks.insert(0, localTask);
+      notifyListeners();
+      return;
+    }
 
     try {
       final newTask = await _taskRepository.addTask(
