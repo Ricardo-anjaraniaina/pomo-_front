@@ -1,63 +1,108 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/constants.dart';
+import '../../auth/data/auth_repository.dart';
 import '../domain/task_model.dart';
 
 class TaskRepository {
-  final List<TaskModel> _tasks = [
-    TaskModel(
-      id: '1',
-      title: 'Design Dashboard UI',
-      description: 'Create high-fidelity screens for the analytics tab.',
-      estimatedPomodoros: 3,
-      completedPomodoros: 2,
-    ),
-    TaskModel(
-      id: '2',
-      title: 'Integrate NestJS API',
-      description: 'Connect login and task endpoints to NestJS backend.',
-      estimatedPomodoros: 4,
-      completedPomodoros: 0,
-      isCompleted: false,
-    ),
-    TaskModel(
-      id: '3',
-      title: 'Write Unit Tests',
-      description: 'Cover auth_repository and timer_state with tests.',
-      estimatedPomodoros: 2,
-      completedPomodoros: 2,
-      isCompleted: true,
-    ),
-  ];
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        if (AuthRepository.token != null)
+          'Authorization': 'Bearer ${AuthRepository.token}',
+      };
 
   Future<List<TaskModel>> getTasks() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return List.from(_tasks);
+    final url = Uri.parse('${AppConfig.baseUrl}/tasks');
+    final response = await http.get(url, headers: _headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch tasks');
+    }
+
+    final List<dynamic> jsonList = jsonDecode(response.body);
+    return jsonList.map((json) {
+      final done = json['done'] as bool? ?? false;
+      final estimated = json['estimated'] as int? ?? 1;
+      
+      return TaskModel(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        description: '',
+        isCompleted: done,
+        estimatedPomodoros: estimated,
+        // Mock completed pomodoros as estimated if task is done, or 0
+        completedPomodoros: done ? estimated : 0,
+      );
+    }).toList();
   }
 
   Future<TaskModel> addTask(String title, String description, int estimatedPomodoros) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final newTask = TaskModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
+    final url = Uri.parse('${AppConfig.baseUrl}/tasks');
+    final response = await http.post(
+      url,
+      headers: _headers,
+      body: jsonEncode({
+        'title': title,
+        'estimated': estimatedPomodoros,
+      }),
+    );
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Failed to create task');
+    }
+
+    final json = jsonDecode(response.body);
+    final done = json['done'] as bool? ?? false;
+    final estimated = json['estimated'] as int? ?? 1;
+
+    return TaskModel(
+      id: json['id'] as String,
+      title: json['title'] as String,
       description: description,
-      estimatedPomodoros: estimatedPomodoros,
+      isCompleted: done,
+      estimatedPomodoros: estimated,
       completedPomodoros: 0,
     );
-    _tasks.add(newTask);
-    return newTask;
   }
 
   Future<TaskModel> updateTask(TaskModel updatedTask) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
-    if (index != -1) {
-      _tasks[index] = updatedTask;
-      return updatedTask;
+    final url = Uri.parse('${AppConfig.baseUrl}/tasks/${updatedTask.id}');
+    final response = await http.patch(
+      url,
+      headers: _headers,
+      body: jsonEncode({
+        'title': updatedTask.title,
+        'estimated': updatedTask.estimatedPomodoros,
+        'done': updatedTask.isCompleted,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update task');
     }
-    throw Exception('Task not found');
+
+    final json = jsonDecode(response.body);
+    final done = json['done'] as bool? ?? false;
+    final estimated = json['estimated'] as int? ?? 1;
+
+    return TaskModel(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: updatedTask.description,
+      isCompleted: done,
+      estimatedPomodoros: estimated,
+      completedPomodoros: updatedTask.completedPomodoros,
+    );
   }
 
   Future<void> deleteTask(String id) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    _tasks.removeWhere((task) => task.id == id);
+    final url = Uri.parse('${AppConfig.baseUrl}/tasks/$id');
+    final response = await http.delete(url, headers: _headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete task');
+    }
   }
 }

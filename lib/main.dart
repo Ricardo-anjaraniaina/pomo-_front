@@ -28,6 +28,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<AuthProvider>(
           create: (context) => AuthProvider(
             context.read<AuthRepository>(),
+            context.read<SessionRepository>(),
           ),
         ),
 

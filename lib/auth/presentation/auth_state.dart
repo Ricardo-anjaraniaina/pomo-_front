@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../timer/data/session_repository.dart';
 import '../data/auth_repository.dart';
 import '../domain/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
+  final SessionRepository _sessionRepository;
   bool _isLoading = false;
   String? _errorMessage;
 
-  AuthProvider(this._authRepository);
+  AuthProvider(this._authRepository, this._sessionRepository);
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -21,6 +23,8 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await _authRepository.login(email, password);
+      // Sync any guest/offline sessions accumulated
+      await _sessionRepository.syncOfflineSessions();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -39,6 +43,8 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await _authRepository.register(name, email, password);
+      // Sync any guest/offline sessions accumulated
+      await _sessionRepository.syncOfflineSessions();
       _isLoading = false;
       notifyListeners();
       return true;

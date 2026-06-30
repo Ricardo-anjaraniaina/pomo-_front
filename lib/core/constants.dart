@@ -1,4 +1,16 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
+class AppConfig {
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:3000';
+    try {
+      if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+    } catch (_) {}
+    return 'http://localhost:3000';
+  }
+}
 
 class AppColors {
   static const Color background = Color(0xFF0F172A); // Slate 900
