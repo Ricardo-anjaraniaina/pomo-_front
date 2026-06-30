@@ -6,6 +6,7 @@ import '../../core/settings_service.dart';
 import '../../core/notification_service.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../timer/domain/timer_state.dart';
+import '../../timer/data/session_repository.dart';
 import 'auth_state.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -635,6 +636,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         _isSyncing = true;
                       });
 
+                      final messenger = ScaffoldMessenger.of(context);
                       final success = await sessionRepo.syncOfflineSessions();
 
                       if (mounted) {
@@ -643,7 +645,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         });
                         await _loadUnsyncedCount();
 
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           SnackBar(
                             content: Text(success
                                 ? '🔄 Synchronisation réussie !'
