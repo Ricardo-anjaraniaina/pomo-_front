@@ -17,20 +17,20 @@ class HomeNavigationShell extends StatefulWidget {
 class _HomeNavigationShellState extends State<HomeNavigationShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    TimerScreen(),
-    TasksScreen(),
-    StatsScreen(),
-    ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final timerProvider = context.watch<TimerProvider>();
     final activeColor = timerProvider.modeColor;
 
+    final screens = [
+      const TimerScreen(),
+      const TasksScreen(),
+      StatsScreen(isActive: _currentIndex == 2),
+      ProfileScreen(isActive: _currentIndex == 3),
+    ];
+
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),

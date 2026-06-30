@@ -10,7 +10,8 @@ import '../../timer/data/session_repository.dart';
 import 'auth_state.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool isActive;
+  const ProfileScreen({super.key, this.isActive = false});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -36,6 +37,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     _avatarController.forward();
     _loadUnsyncedCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _loadUnsyncedCount();
+    }
   }
 
   Future<void> _loadUnsyncedCount() async {

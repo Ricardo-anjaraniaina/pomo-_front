@@ -6,7 +6,8 @@ import '../../timer/data/session_repository.dart';
 import '../../timer/domain/session_model.dart';
 
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({super.key});
+  final bool isActive;
+  const StatsScreen({super.key, this.isActive = false});
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();
@@ -19,6 +20,14 @@ class _StatsScreenState extends State<StatsScreen> {
   void initState() {
     super.initState();
     _refreshStats();
+  }
+
+  @override
+  void didUpdateWidget(covariant StatsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refreshStats();
+    }
   }
 
   void _refreshStats() {
