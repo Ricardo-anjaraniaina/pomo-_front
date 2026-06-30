@@ -9,16 +9,38 @@ class TasksProvider extends ChangeNotifier {
   String? _errorMessage;
   TaskModel? _selectedTask;
 
-  TasksProvider(this._taskRepository) {
-    fetchTasks();
-  }
+  bool _isAuthenticated = false;
+
+  TasksProvider(this._taskRepository);
 
   List<TaskModel> get tasks => _tasks;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   TaskModel? get selectedTask => _selectedTask;
 
+  void updateAuth(bool isAuthenticated) {
+    if (_isAuthenticated != isAuthenticated) {
+      _isAuthenticated = isAuthenticated;
+      if (_isAuthenticated) {
+        fetchTasks();
+      } else {
+        clearTasks();
+      }
+    }
+  }
+
+  void clearTasks() {
+    _tasks = [];
+    _selectedTask = null;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   Future<void> fetchTasks() async {
+    if (!_isAuthenticated) {
+      clearTasks();
+      return;
+    }
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();

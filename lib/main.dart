@@ -62,10 +62,14 @@ class MyApp extends StatelessWidget {
         ),
 
         // 3. Tasks State
-        ChangeNotifierProvider<TasksProvider>(
+        ChangeNotifierProxyProvider<AuthProvider, TasksProvider>(
           create: (context) => TasksProvider(
             context.read<TaskRepository>(),
           ),
+          update: (context, authProvider, tasksProvider) {
+            tasksProvider!.updateAuth(authProvider.isAuthenticated);
+            return tasksProvider;
+          },
         ),
 
         // 4. Timer State (depends on SessionRepository, TasksProvider, Notification & Settings)

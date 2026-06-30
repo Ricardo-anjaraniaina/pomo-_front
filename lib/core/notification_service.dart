@@ -15,32 +15,32 @@ class NotificationService {
   // ─── Initialisation ───────────────────────────────────────────────────────
 
   Future<void> initialize() async {
-  if (kIsWeb || _initialized) return;
+    if (kIsWeb || _initialized) return;
 
-  const AndroidInitializationSettings androidSettings =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const DarwinInitializationSettings iosSettings =
-      DarwinInitializationSettings(
-    requestAlertPermission: false,
-    requestBadgePermission: false,
-    requestSoundPermission: false,
-  );
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
 
-  const InitializationSettings initSettings = InitializationSettings(
-    android: androidSettings,
-    iOS: iosSettings,
-  );
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
 
-  await _plugin.initialize(
-    initSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse response) async {
-      // optional: gérer clic notif
-    },
-  );
+    await _plugin.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        // optional: gérer clic notif
+      },
+    );
 
-  _initialized = true;
-}
+    _initialized = true;
+  }
 
   // ─── Permission (Android 13+, iOS) ────────────────────────────────────────
 
@@ -82,7 +82,7 @@ class NotificationService {
     if (kIsWeb) return;
     if (!_initialized) await initialize();
 
-    const AndroidNotificationDetails androidDetails =
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'pomo_timer_channel',
       'Pomo Timer',
@@ -92,7 +92,7 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       icon: '@mipmap/ic_launcher',
-      color: Color(0xFFEF4444),
+      color: const Color(0xFFEF4444),
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
@@ -101,19 +101,19 @@ class NotificationService {
       presentSound: true,
     );
 
-    const NotificationDetails details = NotificationDetails(
+    final NotificationDetails details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
     final String title = _getTitleForMode(modeName);
-    final String body = _getBodyForMode(modeName);
+    final String body = _getBodyForMode(modeName, nextMode);
 
     await _plugin.show(
-      _kNotifId,
-      title,
-      body,
-      details,
+      id: _kNotifId,
+      title: title,
+      body: body,
+      notificationDetails: details,
     );
   }
 
@@ -141,15 +141,15 @@ class NotificationService {
     }
   }
 
-  String _getBodyForMode(String modeName) {
+  String _getBodyForMode(String modeName, String nextMode) {
     switch (modeName) {
       case 'Focus':
-        return 'Excellent travail ! C\'est l\'heure de la pause. 🎉';
+        return 'Excellent travail ! Place à : $nextMode 🎉';
       case 'Short Break':
       case 'Long Break':
-        return 'La pause est terminée. Prêt pour une nouvelle session Focus ? 💪';
+        return 'Pause terminée. Prêt pour : $nextMode ? 💪';
       default:
-        return 'Session terminée, passez à la prochaine étape.';
+        return 'Session terminée. Prochaine étape : $nextMode.';
     }
   }
 }
